@@ -1,7 +1,8 @@
-#include "player.h"
+#include "../model/player.h"
 
 #include <stdlib.h>
 #include <string>
+#include <vector>
 
 /*
 An Isola board is 7x7 array filled with free spaces ('+')
@@ -23,7 +24,7 @@ namespace GameBoard
 class Board
 {
 public:
-	Board(); 
+	Board(int width, int height); 
 	~Board();
 
 	void play();
@@ -43,10 +44,10 @@ public:
 
 private:
 
-	const int height = 7;
-	const int width = 7;
+	const int m_height;
+	const int m_width;
 
-	char board[7][7]{};
+	std::vector< std::vector<char >> m_board;
 	
 	Player *activePlayer;
 	Player playerOne;

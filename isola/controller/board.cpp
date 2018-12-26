@@ -4,16 +4,19 @@
 using namespace GameBoard;
 
 
-Board::Board() :
+Board::Board(int width, int height) :
+	m_width{width},
+	m_height{height},
 	playerOne{'B', 0, 3},
 	playerTwo{'W', 6, 3},
-	activePlayer{nullptr}
+	activePlayer{nullptr},
+	m_board{ m_height, std::vector<char>(m_width) }
 {
 	Board::clear_board();
 	activePlayer = &playerOne;
 	// Add the player avitars to their set location
-	board[playerOne.get_row()][playerOne.get_column()] = playerOne.get_avatar();
-	board[playerTwo.get_row()][playerTwo.get_column()] = playerTwo.get_avatar();
+	m_board[playerOne.get_row()][playerOne.get_column()] = playerOne.get_avatar();
+	m_board[playerTwo.get_row()][playerTwo.get_column()] = playerTwo.get_avatar();
 }
 
 Board::~Board()
@@ -22,11 +25,11 @@ Board::~Board()
 
 void Board::clear_board()
 {
-	for (int i = 0; i < height; i++)
+	for (int i = 0; i < m_height; i++)
 	{
-		for (int j = 0; j < width; j++)
+		for (int j = 0; j < m_width; j++)
 		{
-			board[i][j] = EMPTY_SPOT;
+			m_board[i][j] = EMPTY_SPOT;
 		}
 	}
 }
@@ -201,12 +204,12 @@ bool Board::attempt_move(Player &p, int direction)
 		std::cout << "Invalid Move, please try again: ";
 		isValidMove = false;
 	}
-	else if (board[row][col] == 'A')
+	else if (m_board[row][col] == 'A')
 	{
 		std::cout << "That space is dead, please try again: ";
 		isValidMove = false;
 	}
-	else if (board[row][col] == playerOne.get_avatar() || board[row][col] == playerTwo.get_avatar())
+	else if (m_board[row][col] == playerOne.get_avatar() || m_board[row][col] == playerTwo.get_avatar())
 	{
 		std::cout << "That space is occupied by the opponent, please try again: ";
 		isValidMove = false;
@@ -216,13 +219,13 @@ bool Board::attempt_move(Player &p, int direction)
 		std::cout << "Valid Move";
 
 		// Kill the old location of the player
-		board[p.get_row()][p.get_column()] = 'A';
+		m_board[p.get_row()][p.get_column()] = 'A';
 
 		// Update the player's location variables to the new, valid coordinates
 		p.set_coordinates(row, col);
 
 		// Add the player's avitar to the new, valid location
-		board[p.get_row()][p.get_column()] = p.get_avatar();
+		m_board[p.get_row()][p.get_column()] = p.get_avatar();
 		isValidMove = true;
 
 		// Redraw the new board
@@ -290,15 +293,15 @@ void Board::fire_arrow(Player &p)
 
 		// Error message if the valid inputs for row and column do not 
 		// Contain a free space ('+')
-		if (board[row][col] != EMPTY_SPOT)
+		if (m_board[row][col] != EMPTY_SPOT)
 		{
 			std::cout << "That location cannot be destroyed." << std::endl;
 		}
 
-	} while (board[row][col] != EMPTY_SPOT);
+	} while (m_board[row][col] != EMPTY_SPOT);
 
 	// Add the arrow to the user selected location and redraw
-	board[row][col] = 'A';
+	m_board[row][col] = 'A';
 	system("CLS");
 	Board::draw_board();
 }
@@ -325,36 +328,36 @@ bool Board::check_has_valid_move(Player &p)
 		checked for a free space ('+').
 	*/
 
-	if (row - 1 >= 0 && col - 1 >= 0 && board[row - 1][col - 1] == EMPTY_SPOT)
+	if (row - 1 >= 0 && col - 1 >= 0 && m_board[row - 1][col - 1] == EMPTY_SPOT)
 	{
 		has_valid_move = true;
 	}
-	else if (row - 1 >= 0 && board[row - 1][col] == EMPTY_SPOT)
+	else if (row - 1 >= 0 && m_board[row - 1][col] == EMPTY_SPOT)
 	{
 		has_valid_move = true;
 	}
-	else if (row - 1 >= 0 && col + 1 <= 6 && board[row - 1][col + 1] == EMPTY_SPOT)
+	else if (row - 1 >= 0 && col + 1 <= 6 && m_board[row - 1][col + 1] == EMPTY_SPOT)
 	{
 		has_valid_move = true;
 	}
-	else if (col - 1 >= 0 && board[row][col - 1] == EMPTY_SPOT)
+	else if (col - 1 >= 0 && m_board[row][col - 1] == EMPTY_SPOT)
 	{
 		has_valid_move = true;
 	}
-	else if (col + 1 <= 6 && board[row][col + 1] == EMPTY_SPOT)
+	else if (col + 1 <= m_width - 1  && m_board[row][col + 1] == EMPTY_SPOT)
 	{
 		has_valid_move = true;
 	}
-	else if (row + 1 <= 6 && col - 1 >= 0 && board[row + 1][col - 1] == EMPTY_SPOT)
+	else if (row + 1 <= m_width - 1 && col - 1 >= 0 && m_board[row + 1][col - 1] == EMPTY_SPOT)
 	{
 		has_valid_move = true;
 	}
-	else if (row + 1 <= 6 && board[row + 1][col] == EMPTY_SPOT)
+	else if (row + 1 <= m_width - 1 && m_board[row + 1][col] == EMPTY_SPOT)
 	{
 		has_valid_move = true;
 
 	}
-	else if (row + 1 <= 6 && col + 1 <= 6 && board[row + 1][col + 1] == EMPTY_SPOT)
+	else if (row + 1 <= m_height - 1 && col + 1 <= m_width - 1 && m_board[row + 1][col + 1] == EMPTY_SPOT)
 	{
 		has_valid_move = true;
 	}
@@ -393,14 +396,14 @@ void Board::draw_board()
 
 	std::string str = "  0123456\n";
 
-	for (int i = 0; i < height; i++)
+	for (int i = 0; i < m_height; i++)
 	{
 
 		str +=  std::to_string(i) + " ";
 
-		for (int j = 0; j < width; j++)
+		for (int j = 0; j < m_width; j++)
 		{
-			str += board[i][j];
+			str += m_board[i][j];
 		}
 
 		str += "\n";
@@ -421,11 +424,11 @@ std::string Board::get_board_string()
 {
 	std::string str = "";
 
-	for (int i = 0; i < width; i++)
+	for (int i = 0; i < m_width; i++)
 	{
-		for (int j = 0; j < height; j++)
+		for (int j = 0; j < m_height; j++)
 		{
-			str += board[i][j];
+			str += m_board[i][j];
 		}
 
 		str += "\n";
