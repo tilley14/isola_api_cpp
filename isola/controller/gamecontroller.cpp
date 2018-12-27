@@ -6,18 +6,15 @@ using namespace GameController;
 
 GameController::GameController() :
 	m_initialized{false},
-	m_width{ width },
-	m_height{ height },
 	playerOne{ 'B', 0, 3 },
 	playerTwo{ 'W', 6, 3 },
 	activePlayer{ nullptr },
-	m_board{ m_height, std::vector<char>(m_width) }
+	m_gameboard{7, 7}
 {
-	Board::clear_board();
 	activePlayer = &playerOne;
 	// Add the player avitars to their set location
-	m_board[playerOne.get_row()][playerOne.get_column()] = playerOne.get_avatar();
-	m_board[playerTwo.get_row()][playerTwo.get_column()] = playerTwo.get_avatar();
+	//m_gameboard[playerOne.get_row()][playerOne.get_column()] = playerOne.get_avatar();
+	//m_gameboard[playerTwo.get_row()][playerTwo.get_column()] = playerTwo.get_avatar();
 }
 
 GameController::~GameController()
@@ -165,37 +162,7 @@ bool GameController::attempt_move(Player &p, direction adirection)
 	}
 
 
-	if (row < 0 || row > m_height - 1 || col < 0 || col > m_width - 1)
-	{
-		std::cout << "Invalid Move, please try again: ";
-		isValidMove = false;
-	}
-	else if (m_board[row][col] == 'A')
-	{
-		std::cout << "That space is dead, please try again: ";
-		isValidMove = false;
-	}
-	else if (m_board[row][col] == playerOne.get_avatar() || m_board[row][col] == playerTwo.get_avatar())
-	{
-		std::cout << "That space is occupied by the opponent, please try again: ";
-		isValidMove = false;
-	}
-	else
-	{
-		std::cout << "Valid Move";
-
-		// Kill the old location of the player
-		m_board[p.get_row()][p.get_column()] = 'A';
-
-		// Update the player's location variables to the new, valid coordinates
-		p.set_coordinates(row, col);
-
-		// Add the player's avitar to the new, valid location
-		m_board[p.get_row()][p.get_column()] = p.get_avatar();
-		isValidMove = true;
-	}
-
-	return isValidMove;
+	return m_gameboard.move_player(  row, col);
 }
 
 
@@ -211,7 +178,7 @@ game_response GameController::fire_arrow(int row, int col)
 	if (m_state != gs_player_arrow)
 		return game_response{ rc_error, "Game not ready to fire an arrow" };
 
-	bool is_valid = GameController::attempt_fire_arrow(row, col);
+	bool is_valid = m_gameboard.kill_space(row, col);
 
 	if (!is_valid)
 		return game_response{ rc_error, "Arrow Shot a failure" };
@@ -222,22 +189,6 @@ game_response GameController::fire_arrow(int row, int col)
 
 }
 
-bool GameController::attempt_fire_arrow(int row, int col)
-{
-	// Ask for coordinates to shoot the arrow until the player inputs
-	// the location of a free spot
-	if (row < 0 || row > m_height || col < 0 || col > m_width)
-		return false;
-
-
-	if (m_board[row][col] != EMPTY_SPOT)
-		return false;	// That location cannont be destroyed
-
-	m_board[row][col] = 'A';
-
-	return true;
-
-}
 /*
 	Looks in all 8 directions a player could possibly move and if one of those
 	places contains a free space ('+'), then the player has a valid move availible
@@ -247,11 +198,14 @@ bool GameController::attempt_fire_arrow(int row, int col)
 	@return has_valid_move true if there is a free space the player can move to,
 		false if there is not.
 */
-bool Board::check_has_valid_move(Player &p)
+bool GameController::check_has_valid_move(Player &p)
 {
 	bool has_valid_move = false;
 	int row = p.get_row();
 	int col = p.get_column();
+
+	int m_width = m_gameboard.m_width;
+	int m_height = m_gameboard.m_height;
 
 	/*
 		Each if statement first checks to see if the player is on an edge.
@@ -260,36 +214,36 @@ bool Board::check_has_valid_move(Player &p)
 		checked for a free space ('+').
 	*/
 
-	if (row - 1 >= 0 && col - 1 >= 0 && m_board[row - 1][col - 1] == EMPTY_SPOT)
+	if (row - 1 >= 0 && col - 1 >= 0 && m_gameboard[row - 1][col - 1] == EMPTY_SPOT)
 	{
 		has_valid_move = true;
 	}
-	else if (row - 1 >= 0 && m_board[row - 1][col] == EMPTY_SPOT)
+	else if (row - 1 >= 0 && m_gameboard[row - 1][col] == EMPTY_SPOT)
 	{
 		has_valid_move = true;
 	}
-	else if (row - 1 >= 0 && col + 1 <= 6 && m_board[row - 1][col + 1] == EMPTY_SPOT)
+	else if (row - 1 >= 0 && col + 1 <= 6 && m_gameboard[row - 1][col + 1] == EMPTY_SPOT)
 	{
 		has_valid_move = true;
 	}
-	else if (col - 1 >= 0 && m_board[row][col - 1] == EMPTY_SPOT)
+	else if (col - 1 >= 0 && m_gameboard[row][col - 1] == EMPTY_SPOT)
 	{
 		has_valid_move = true;
 	}
-	else if (col + 1 <= m_width - 1 && m_board[row][col + 1] == EMPTY_SPOT)
+	else if (col + 1 <= m_width - 1 && m_gameboard[row][col + 1] == EMPTY_SPOT)
 	{
 		has_valid_move = true;
 	}
-	else if (row + 1 <= m_width - 1 && col - 1 >= 0 && m_board[row + 1][col - 1] == EMPTY_SPOT)
+	else if (row + 1 <= m_width - 1 && col - 1 >= 0 && m_gameboard[row + 1][col - 1] == EMPTY_SPOT)
 	{
 		has_valid_move = true;
 	}
-	else if (row + 1 <= m_width - 1 && m_board[row + 1][col] == EMPTY_SPOT)
+	else if (row + 1 <= m_width - 1 && m_gameboard[row + 1][col] == EMPTY_SPOT)
 	{
 		has_valid_move = true;
 
 	}
-	else if (row + 1 <= m_height - 1 && col + 1 <= m_width - 1 && m_board[row + 1][col + 1] == EMPTY_SPOT)
+	else if (row + 1 <= m_height - 1 && col + 1 <= m_width - 1 && m_gameboard[row + 1][col + 1] == EMPTY_SPOT)
 	{
 		has_valid_move = true;
 	}
@@ -301,7 +255,7 @@ bool Board::check_has_valid_move(Player &p)
 /*
 	Displays the rules of the game
 */
-void GameController::get_rules()
+std::string GameController::get_rules()
 {
 	std::string rules =
 		"********** Isola Game **********"
@@ -319,50 +273,9 @@ void GameController::get_rules()
 }
 
 /*
-	Draws the Isola game board with the directional key
-*/
-void Board::draw_board()
-{
-
-	std::string str = "  0123456\n";
-
-	for (int i = 0; i < m_height; i++)
-	{
-
-		str += std::to_string(i) + " ";
-
-		for (int j = 0; j < m_width; j++)
-		{
-			str += m_board[i][j];
-		}
-
-		str += "\n";
-	}
-
-	str += "\n7-8-9"
-		"\n4---6"
-		"\n1-2-3";
-
-	system("CLS");
-	std::cout << str << std::endl;
-}
-
-/*
 	Returns the Isola game board with nothing added
 */
-std::string Board::get_board_string()
+const std::vector< std::vector< GameBoard::game_piece>> GameController::get_board()
 {
-	std::string str = "";
-
-	for (int i = 0; i < m_width; i++)
-	{
-		for (int j = 0; j < m_height; j++)
-		{
-			str += m_board[i][j];
-		}
-
-		str += "\n";
-	}
-
-	return str;
+	return m_gameboard.get_board();
 }

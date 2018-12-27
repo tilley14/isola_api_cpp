@@ -61,19 +61,17 @@ public:
 	game_response fire_arrow(int x, int y);
 	game_response move(direction adirection);
 
+	const std::vector< std::vector< GameBoard::game_piece>> get_board();
+
+
 	// The activePlayer variable takes advantage of the fact that these are reference objects
 	// and can alternate between being player 1 and player 2
 
 private:
 
-
-
 	game_state m_state;
 
-	const int m_height;
-	const int m_width;
-
-	std::vector< std::vector<char >> m_board;
+	GameBoard::Board m_gameboard;
 
 	Player *activePlayer;
 	Player playerOne;
@@ -81,8 +79,6 @@ private:
 
 	bool check_has_valid_move(Player &p);
 	bool attempt_move(Player &p, direction adirection);
-	bool attempt_arrow(Player &p, int x, int y);
-
 
 };
 

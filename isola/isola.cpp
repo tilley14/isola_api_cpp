@@ -2,12 +2,12 @@
 //
 
 #include "isola.h"
-#include "controller/board.h"
-using namespace GameBoard;
+#include "controller/gamecontroller.h"
+using namespace GameController;
 
 int main()
 {
-	Board isola{7, 7};
+	GameController isola{};
 	isola.play();
 
 	return 0;
