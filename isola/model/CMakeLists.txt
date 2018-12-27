@@ -5,6 +5,8 @@ cmake_minimum_required (VERSION 3.8)
 
 set(MODEL_SOURCES "player.cpp"
 				  "player.h"
+				  "board.cpp"
+				  "board.h"
 				  )
 
 # Add source to this project's executable.

@@ -3,8 +3,8 @@
 #
 cmake_minimum_required (VERSION 3.8)
 
-set(CONTROLLER_SOURCES "board.cpp"
-					   "board.h"
+set(CONTROLLER_SOURCES "gamecontroller.cpp"
+					   "gamecontroller.h"
 					   )
 
 # Add source to this project's executable.
