@@ -8,10 +8,9 @@ GameController::GameController() :
 	m_initialized{false},
 	playerOne{ 'B', 0, 3 },
 	playerTwo{ 'W', 6, 3 },
-	activePlayer{ nullptr },
+	m_active_player{ GameBoard::gp_player_one },
 	m_gameboard{7, 7}
 {
-	activePlayer = &playerOne;
 	// Add the player avitars to their set location
 	//m_gameboard[playerOne.get_row()][playerOne.get_column()] = playerOne.get_avatar();
 	//m_gameboard[playerTwo.get_row()][playerTwo.get_column()] = playerTwo.get_avatar();
@@ -43,35 +42,35 @@ game_response GameController::play()
 
 	// Check if the activePlayer can move.
 	// If the activePlayer cannot move, the loop will end.
-	while (Board::check_has_valid_move(*activePlayer))
+	while (GameController::check_has_valid_move(m_active_player))
 	{
-		Board::move(*activePlayer);
-		Board::fire_arrow(*activePlayer);
+		//Board::move(*activePlayer);
+		//Board::fire_arrow(*activePlayer);
 
-		if (activePlayer->get_avatar() == 'B')
+		if (m_active_player == GameBoard::gp_player_one)
 		{
-			activePlayer = &playerTwo;
+			m_active_player = GameBoard::gp_player_two;
 		}
 		else
 		{
-			activePlayer = &playerOne;
+			m_active_player = GameBoard::gp_player_one;
 		}
 
 	}
 
 	// If the activePlayer cannot move, the activePlayer loses the game.
-	std::cout << activePlayer->get_avatar() + " is no longer able to move!" << std::endl;
-	if (activePlayer->get_avatar() == 'B')
-	{
-		std::cout << playerTwo.get_avatar() + " is the winner" << std::endl;
-	}
-	else
-	{
-		std::cout << playerOne.get_avatar() + " is the winner" << std::endl;
-	}
+	// std::cout << activePlayer->get_avatar() + " is no longer able to move!" << std::endl;
+	// if (activePlayer->get_avatar() == 'B')
+	// {
+	// 	std::cout << playerTwo.get_avatar() + " is the winner" << std::endl;
+	// }
+	// else
+	// {
+	// 	std::cout << playerOne.get_avatar() + " is the winner" << std::endl;
+	// }
 
-	std::cout << "Press Enter to continue" << std::endl;
-	std::cin.ignore();
+	// std::cout << "Press Enter to continue" << std::endl;
+	// std::cin.ignore();
 
 	return game_response{ rc_game_over, "game finished successfully" };
 }
@@ -84,15 +83,20 @@ game_response GameController::play()
 
 	@param p the player who is attempting to move
 */
-game_response GameController::move(direction adirection)
+game_response GameController::move(GameBoard::game_piece p, direction adirection)
 {
 	if (m_state == gs_uninitialized)
 		return game_response{ rc_uninitialized, "Game not initialized." };
 
 	if (m_state != gs_player_move)
-		return game_response{ rc_error, "Game is not ready for a move."}
+		return game_response{ rc_error, "Game is not ready for a move." };
 
-	 bool valid_move = GameController::attempt_move(p, adirection)
+	bool valid_move = GameController::attempt_move(p, adirection);
+
+	if (!valid_move)
+		return game_response{rc_error, "Unable to move player."};
+
+	return game_response{rc_success, "Player successfully moved."};
 }
 
 
@@ -108,14 +112,18 @@ game_response GameController::move(direction adirection)
 	@param direction the direction in which the player is attempting to move
 	@return isValidMove weather or not the move can be made
 */
-bool GameController::attempt_move(Player &p, direction adirection)
+bool GameController::attempt_move(GameBoard::game_piece p, direction adirection)
 {
-	bool isValidMove = true;
+	GameBoard::player *aplayer = m_gameboard.get_player(p);
+
+	if (!(*aplayer))
+		return false;
+
 
 	// We are storing these values in a different location because we don't
 	// Want to change the Player's variables unless the move is valid.
-	int row = p.get_row();
-	int col = p.get_column();
+	int row = (*aplayer).get_row();
+	int col = (*aplayer).get_column();
 
 	// How to update the player's row and column depending
 	// on the direction entered
@@ -162,7 +170,7 @@ bool GameController::attempt_move(Player &p, direction adirection)
 	}
 
 
-	return m_gameboard.move_player(  row, col);
+	return m_gameboard.move_player(p, row, col);
 }
 
 
@@ -178,15 +186,13 @@ game_response GameController::fire_arrow(int row, int col)
 	if (m_state != gs_player_arrow)
 		return game_response{ rc_error, "Game not ready to fire an arrow" };
 
+	// Try to kill the space
 	bool is_valid = m_gameboard.kill_space(row, col);
 
 	if (!is_valid)
 		return game_response{ rc_error, "Arrow Shot a failure" };
 
 	return game_response{ rc_success, "Arrow shot successful" };
-
-	// Add the arrow to the user selected location and redraw
-
 }
 
 /*
@@ -198,57 +204,14 @@ game_response GameController::fire_arrow(int row, int col)
 	@return has_valid_move true if there is a free space the player can move to,
 		false if there is not.
 */
-bool GameController::check_has_valid_move(Player &p)
-{
-	bool has_valid_move = false;
-	int row = p.get_row();
-	int col = p.get_column();
+bool GameController::check_has_valid_move(GameBoard::game_piece p)
+{	
+	GameBoard::player *aplayer = m_gameboard.get_player(p);
 
-	int m_width = m_gameboard.m_width;
-	int m_height = m_gameboard.m_height;
+	if (!(*aplayer))
+		return false;
 
-	/*
-		Each if statement first checks to see if the player is on an edge.
-		We do not want to attempt to check a spot on a board that is out of bounds.
-		If the spot is within the bounds of the board, then that spot is
-		checked for a free space ('+').
-	*/
-
-	if (row - 1 >= 0 && col - 1 >= 0 && m_gameboard[row - 1][col - 1] == EMPTY_SPOT)
-	{
-		has_valid_move = true;
-	}
-	else if (row - 1 >= 0 && m_gameboard[row - 1][col] == EMPTY_SPOT)
-	{
-		has_valid_move = true;
-	}
-	else if (row - 1 >= 0 && col + 1 <= 6 && m_gameboard[row - 1][col + 1] == EMPTY_SPOT)
-	{
-		has_valid_move = true;
-	}
-	else if (col - 1 >= 0 && m_gameboard[row][col - 1] == EMPTY_SPOT)
-	{
-		has_valid_move = true;
-	}
-	else if (col + 1 <= m_width - 1 && m_gameboard[row][col + 1] == EMPTY_SPOT)
-	{
-		has_valid_move = true;
-	}
-	else if (row + 1 <= m_width - 1 && col - 1 >= 0 && m_gameboard[row + 1][col - 1] == EMPTY_SPOT)
-	{
-		has_valid_move = true;
-	}
-	else if (row + 1 <= m_width - 1 && m_gameboard[row + 1][col] == EMPTY_SPOT)
-	{
-		has_valid_move = true;
-
-	}
-	else if (row + 1 <= m_height - 1 && col + 1 <= m_width - 1 && m_gameboard[row + 1][col + 1] == EMPTY_SPOT)
-	{
-		has_valid_move = true;
-	}
-
-	return has_valid_move;
+	return m_gameboard.check_has_valid_move(*aplayer);
 }
 
 

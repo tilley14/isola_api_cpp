@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string>
 
+
 namespace GameController
 {
 	enum direction {
@@ -23,7 +24,8 @@ namespace GameController
 		gs_uninitialized,
 		gs_initialized,
 
-/**		gs_player_one_move,
+/**		
+		gs_player_one_move,
 		gs_player_two_move,
 		gs_player_one_arrow,
 		gs_player_two_arrow,
@@ -73,12 +75,12 @@ private:
 
 	GameBoard::Board m_gameboard;
 
-	Player *activePlayer;
+	GameBoard::game_piece m_active_player;
 	Player playerOne;
 	Player playerTwo;
 
-	bool check_has_valid_move(Player &p);
-	bool attempt_move(Player &p, direction adirection);
+	bool check_has_valid_move(GameBoard::game_piece p);
+	bool attempt_move(GameBoard::game_piece p, direction adirection);
 
 };
 
