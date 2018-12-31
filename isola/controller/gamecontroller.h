@@ -23,6 +23,7 @@ namespace GameController
 	enum game_state {
 		gs_uninitialized,
 		gs_initialized,
+		gs_turn_begin,
 
 /**		
 		gs_player_one_move,
@@ -34,6 +35,7 @@ namespace GameController
 */
 		gs_player_move,
 		gs_player_arrow,
+		gs_turn_end,
 		gs_game_finished
 	};
 
@@ -58,10 +60,13 @@ public:
 	~GameController();
 
 	std::string get_rules();
+	game_response initialize();
+	game_response start_game();
 
-	game_response play();
+	game_response begin_turn();
 	game_response fire_arrow(int x, int y);
 	game_response move(direction adirection);
+	game_response end_turn();
 
 	const std::vector< std::vector< GameBoard::game_piece>> get_board();
 

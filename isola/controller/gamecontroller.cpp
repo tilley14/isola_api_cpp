@@ -20,6 +20,27 @@ GameController::~GameController()
 {
 }
 
+game_response GameController::initialize()
+{
+	if (m_state != gs_uninitialized)
+		return game_response{ rc_error, "Unable to initialize." };
+
+	// Init board
+
+
+	m_state = gs_initialized;
+	return game_response{ rc_success, "Game Initialization Successful." };
+}
+
+game_response GameController::start_game()
+{
+	if(m_state != gs_initialized)
+		return game_response{ rc_error, "Game not ready to start."}
+
+	m_state = gs_turn_begin;
+	return game_response{ rc_success, "Game start successful." };
+}
+
 /*
 	Begins a game of Isola with 2 players
 	The players alternate being the activePlayer until
@@ -34,10 +55,15 @@ GameController::~GameController()
 		3. FireArrow()
 */
 
-game_response GameController::play()
+game_response GameController::begin_turn()
 {
 	if (m_state == gs_uninitialized)
 		return game_response{rc_uninitialized, "Game not initialized."};
+
+	if (m_state != gs_turn_begin)
+		return game_rsponse{ rc_error, "Not able to to begin turn." };
+
+
 
 
 	// Check if the activePlayer can move.
@@ -47,14 +73,7 @@ game_response GameController::play()
 		//Board::move(*activePlayer);
 		//Board::fire_arrow(*activePlayer);
 
-		if (m_active_player == GameBoard::gp_player_one)
-		{
-			m_active_player = GameBoard::gp_player_two;
-		}
-		else
-		{
-			m_active_player = GameBoard::gp_player_one;
-		}
+
 
 	}
 
@@ -72,9 +91,50 @@ game_response GameController::play()
 	// std::cout << "Press Enter to continue" << std::endl;
 	// std::cin.ignore();
 
-	return game_response{ rc_game_over, "game finished successfully" };
+	return game_response{ rc_game_over, "Game finished successfully." };
 }
 
+game_response GameController::end_turn()
+{
+	if (m_state != gs_turn_end)
+		return game_response{ rc_error, "Turn could not be completed." };
+
+	if (m_active_player == GameBoard::gp_player_one)
+	{
+		m_active_player = GameBoard::gp_player_two;
+	}
+	else
+	{
+		m_active_player = GameBoard::gp_player_one;
+	}
+
+	m_state = gs_turn_begin;
+	return game_response{ rc_success, "Turn ended successfully. Starting next player's turn."}
+
+}
+
+
+/*
+	"Kills" a space on the game board by replacing the '+' with
+	an 'A'. Players will no longer be able to move to that space.
+
+	@param p the player who is shooting the arrow
+*/
+game_response GameController::fire_arrow(int row, int col)
+{
+	// Todo: Check state
+	if (m_state != gs_player_arrow)
+		return game_response{ rc_error, "Game not ready to fire an arrow" };
+
+	// Try to kill the space
+	bool is_valid = m_gameboard.kill_space(row, col);
+
+	if (!is_valid)
+		return game_response{ rc_error, "Arrow Shot a failure" };
+
+	m_state = gs_player_move;
+	return game_response{ rc_success, "Arrow shot successful" };
+}
 
 /*
 	The Player is asked to enter a direction to move in using the number pad.
@@ -96,6 +156,7 @@ game_response GameController::move(GameBoard::game_piece p, direction adirection
 	if (!valid_move)
 		return game_response{rc_error, "Unable to move player."};
 
+	m_state = gs_player_arrow;
 	return game_response{rc_success, "Player successfully moved."};
 }
 
@@ -173,27 +234,6 @@ bool GameController::attempt_move(GameBoard::game_piece p, direction adirection)
 	return m_gameboard.move_player(p, row, col);
 }
 
-
-/*
-	"Kills" a space on the game board by replacing the '+' with
-	an 'A'. Players will no longer be able to move to that space.
-
-	@param p the player who is shooting the arrow
-*/
-game_response GameController::fire_arrow(int row, int col)
-{
-	// Todo: Check state
-	if (m_state != gs_player_arrow)
-		return game_response{ rc_error, "Game not ready to fire an arrow" };
-
-	// Try to kill the space
-	bool is_valid = m_gameboard.kill_space(row, col);
-
-	if (!is_valid)
-		return game_response{ rc_error, "Arrow Shot a failure" };
-
-	return game_response{ rc_success, "Arrow shot successful" };
-}
 
 /*
 	Looks in all 8 directions a player could possibly move and if one of those
